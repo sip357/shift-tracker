@@ -31,7 +31,9 @@ merged_df["Variance"] = (
     - merged_df["Planned_Tonnes"]
 )
 
-print(merged_df)
+merged_df["Status"] = merged_df["Variance"].apply(
+    lambda x: "Under" if x < 0 else "Over"
+)
 
 # ----------------------------
 # Save to SQLite
@@ -46,12 +48,23 @@ merged_df.to_sql(
     index=False
 )
 
+# Query to get total variance by zone
+query = """
+SELECT Zone, SUM(Variance) as TotalVariance
+FROM shift_variance
+GROUP BY Zone
+"""
+
+zone_result = pd.read_sql(query, conn)
+
+print(zone_result)
+
 conn.close()
 
 print("Data saved to SQLite database.")
 
 # ----------------------------
-# Create Bar Chart
+# Bar Chart
 # ----------------------------
 
 zone_variance = merged_df.groupby("Zone")["Variance"].sum()
